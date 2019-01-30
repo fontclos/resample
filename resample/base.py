@@ -30,7 +30,6 @@ class Resampler:
         # internal computations
         self._drop_tails()
         self._compute_probs()
-        np.random.choice
 
     def resample(self, num_samples: int):
         return np.random.choice(
