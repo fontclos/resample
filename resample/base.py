@@ -10,7 +10,7 @@ class Resampler:
     def __init__(
         self,
         data: Sequence,
-        drop_tails: float = 0.005,
+        drop_tails: float = 0.001,
         decimals: int = 4,
         kernel: str = "gaussian",
         bandwidth: Union[str, float] = "scott"
