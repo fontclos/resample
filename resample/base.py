@@ -10,7 +10,8 @@ class Resampler:
     def __init__(
         self,
         data: Sequence,
-        drop_tails: float = 0.005
+        drop_tails: float = 0.005,
+        decimals: int = 4
     ):
         assert drop_tails <= 0.1
         if np.array(data).ndim != 1:
@@ -20,6 +21,7 @@ class Resampler:
         self.kde = FFTKDE(kernel="box", bw="scott").fit(data)
         self.num_samples = len(data)
         self.drop_tails = drop_tails
+        self._decimals = decimals
         # set xmin, xmax to avoid noisy tails
         self._set_xmin_xmax()
         # estimate the density at the datapoints using a grid
@@ -36,7 +38,7 @@ class Resampler:
     def _estimate_density(self):
         grid, indices = map_to_rounded_grid(
             data=self.data,
-            decimals=4
+            decimals=self._decimals
         )
         grid_density = self.kde.evaluate(grid)
         data_density = 1 / grid_density[indices]
