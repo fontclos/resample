@@ -11,14 +11,16 @@ class Resampler:
         self,
         data: Sequence,
         drop_tails: float = 0.005,
-        decimals: int = 4
+        decimals: int = 4,
+        kernel: str = "gaussian",
+        bandwidth: Union[str, float] = "scott"
     ):
         assert drop_tails <= 0.1
         if np.array(data).ndim != 1:
             raise RuntimeError("Data shape not ok")
 
         self.data = np.array(data)
-        self.kde = FFTKDE(kernel="box", bw="scott").fit(data)
+        self.kde = FFTKDE(kernel=kernel, bw=bandwidth).fit(data)
         self.num_samples = len(data)
         self.drop_tails = drop_tails
         self._decimals = decimals
@@ -48,6 +50,8 @@ class Resampler:
             if x < self.xmin or x > self.xmax:
                 data_density[i] = 0
         self._data_density = data_density / sum(data_density)
+        self._grid_density = grid_density
+        self._grid = grid
 
     def _set_xmin_xmax(self):
         m, M = np.percentile(
