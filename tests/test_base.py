@@ -28,3 +28,12 @@ def test_resampler_find_indices(uniform):
             x in range(len(data))
             for x in indices
         ])
+
+
+def test_resampler_gaussian():
+    data = np.random.normal(size=100_000)
+    resampler = Resampler(data=data)
+    indices = resampler.find_indices(num_samples=100_000)
+    data_uniform = data[indices]
+    hist, _ = np.histogram(data_uniform, bins="auto")
+    assert np.std(hist)/np.mean(hist) < 0.1
