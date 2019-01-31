@@ -1,57 +1,55 @@
 from sklearn.neighbors import KernelDensity
 import numpy as np
-
+from KDEpy.FFTKDE import FFTKDE
 from typing import Sequence, Union
+
+from .utils import map_to_rounded_grid
 
 
 class Resampler:
     def __init__(
         self,
         data: Sequence,
-        density_estimator: KernelDensity = KernelDensity(
-            bandwidth = 0.1,
-        ),
         drop_tails: float = 0.005
     ):
         assert drop_tails <= 0.1
-        data = np.array(data)
-        if len(data.shape) == 1:
-            data = data.reshape(-1, 1)
-        elif len(data.shape) == 2 and (data.shape[0] == 1 or data.shape[1] != 1):
-            raise RuntimeError("Data shape not ok")
-        elif len(data.shape) > 2:
+        if np.array(data).ndim != 1:
             raise RuntimeError("Data shape not ok")
 
-        self.kde = density_estimator
-        self.kde.fit(data)
-        self.data = data
+        self.data = np.array(data)
+        self.kde = FFTKDE(kernel="box", bw="scott").fit(data)
         self.num_samples = len(data)
         self.drop_tails = drop_tails
-
-        # internal computations
+        # set xmin, xmax to avoid noisy tails
         self._set_xmin_xmax()
-        self._compute_probs()
+        # estimate the density at the datapoints using a grid
+        self._estimate_density()
 
     def find_indices(self, num_samples: int):
         return np.random.choice(
             len(self.data),
             size=num_samples,
-            p=self._probs
+            p=self._data_density
         )
 
     # PRIVATE METHODS
-    def _compute_probs(self):
-        self._logprobs = self.kde.score_samples(self.data)
-        probs = 1./np.exp(self._logprobs)
+    def _estimate_density(self):
+        grid, indices = map_to_rounded_grid(
+            data=self.data,
+            decimals=4
+        )
+        grid_density = self.kde.evaluate(grid)
+        data_density = 1 / grid_density[indices]
+
         # set prob of tails to zero
-        for i, x in enumerate(self.data.T[0]):
+        for i, x in enumerate(self.data):
             if x < self.xmin or x > self.xmax:
-                probs[i] = 0
-        self._probs = probs / sum(probs)
+                data_density[i] = 0
+        self._data_density = data_density / sum(data_density)
 
     def _set_xmin_xmax(self):
         m, M = np.percentile(
-            self.data.T[0],
+            self.data,
             [100 * self.drop_tails, 100 - 100 * self.drop_tails]
         )
         self.xmin = m

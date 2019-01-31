@@ -1,5 +1,5 @@
 from resample.base import Resampler
-from sklearn.neighbors import KernelDensity
+from KDEpy.FFTKDE import FFTKDE
 import numpy as np
 import pytest
 
@@ -11,8 +11,20 @@ def uniform():
 
 
 def test_resampler_init(uniform):
-    for data in [uniform, list(uniform), np.array([uniform]).T]:
-        resampler = Resampler(data=data)
-        assert isinstance(resampler, Resampler)
-        assert isinstance(resampler.kde, KernelDensity)
-        assert len(data) == resampler.num_samples
+    data = uniform
+    resampler = Resampler(data=data)
+    assert isinstance(resampler, Resampler)
+    assert isinstance(resampler.kde, FFTKDE)
+    assert len(data) == resampler.num_samples
+
+
+def test_resampler_find_indices(uniform):
+    data = uniform
+    resampler = Resampler(data=data)
+    for num_samples in [10, 100, 1000, 10_000]:
+        indices = resampler.find_indices(num_samples=num_samples)
+        assert len(indices) == num_samples
+        assert np.all([
+            x in range(len(data))
+            for x in indices
+        ])
