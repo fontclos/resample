@@ -8,7 +8,7 @@ KDEpy == 1.0.2
 # resample/base.py: 2
 # resample/utils.py: 1
 # tests/test_base.py: 3
-numpy == 1.18.1
+numpy == 1.22.0
 
 # tests/test_base.py: 4
 pytest == 4.3.1
